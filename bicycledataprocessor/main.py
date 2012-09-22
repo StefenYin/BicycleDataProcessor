@@ -736,7 +736,7 @@ class Run():
         self.compute_rear_wheel_contact_rates()
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
-		self.compute_front_rear_wheel_contact_forces()
+        self.compute_front_rear_wheel_contact_forces()
 
         self.topSig = 'task'
 
