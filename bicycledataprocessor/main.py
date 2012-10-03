@@ -24,7 +24,9 @@ import matplotlib.pyplot as plt
 from tables import NoSuchNodeError
 
 import dtk.process as process
-from dtk.bicycle import front_contact, benchmark_to_moore, front_wheel_rate, steer_torque_slip, contact_forces_slip, contact_forces_nonslip
+from dtk.bicycle import front_contact, benchmark_to_moore 
+from dtk.bicycle import front_wheel_rate, steer_torque_slip,
+                        contact_forces_slip, contact_forces_nonslip
 import bicycleparameters as bp
 
 
@@ -731,15 +733,13 @@ class Run():
         print('Extracting the task portion from the data.')
         self.extract_task()
 
-        # compute task specific variables
+        # compute task specific variables*
         self.compute_yaw_angle()
         self.compute_rear_wheel_contact_rates()
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_rate()
-        self.steer_torque_slip()
-        self.contact_forces_slip()
-        self.contact_forces_nonslip()
+        self.compute_front_rear_wheel_contact_forces()
 
         self.topSig = 'task'
 
@@ -858,27 +858,27 @@ class Run():
         """Calculates the front wheel rate, based on the Jason's data 
         of front_wheel_contact_point. Alternatively, you can use the 
         sympy to get the front_wheel_contact_rate directly first."""
-		
+
         q1 = self.taskSignals['YawAngle']
         q2 = self.taskSignals['RollAngle']
         q4 = self.taskSignals['SteerAngle']
         u9 = self.taskSignals['LongitudinalFrontContact'].time_derivative()
         u10 = self.taskSignals['LateralFrontContact'].time_derivative()
-		
+
         bp = self.bicycleRiderParameters
-		
+
         lam = bp['lam']
         rF = bp['rF']
-		
+
         q4_wheel = q4 * cos(lam) * cos(q2)
         q4_wheel.name = 'SteerAngle_FrontWheel'
         q4_wheel.units = 'radian'
         self.taskSignals['SteerAngle_FrontWheel'] = q4_wheel
-		
+
         f = np.vectorize(front_wheel_rate)
-        
+
         u6 = f(q1, q2, q4, u9, u10, lam, rF)
-        
+
         u6.name = 'FrontWheelRate'
         u6.units = 'radian/second'
         self.taskSignals['FrontWheelRate'] = u6
@@ -889,11 +889,11 @@ class Run():
         wheel with respect to inertial frame under
         the slip and nonslip condition. Also, provide 
         the steer torque T4."""
-		
+
         #parameters
         bp = self.bicycleRiderParameters
         mp = benchmark_to_moore(self.bicycleRiderParameters)
-		
+
         l1 = mp['l1']
         l2 = mp['l2']
         mc = mp['mc']
@@ -904,14 +904,11 @@ class Run():
         rf = mp['rf']
 
         #signals assignment --slip condition
-        V = '%1.2f' % self.taskSignals['ForwardSpeed'].mean()
-        #V = self.taskSignals['ForwardSpeed']
-		
-        q1 = self.taskSignals['YawAngle']
+        V = self.taskSignals['ForwardSpeed'].mean()
+
         q2 = self.taskSignals['RollAngle']
         q4 = self.taskSignals['SteerAngle']
-        
-        u1 = self.taskSignals['YawRate']
+
         u2 = self.taskSignals['RollRate']
         u3 = self.taskSignals['PitchRate']
         u4 = self.taskSignals['SteerRate']
@@ -921,8 +918,7 @@ class Run():
         u8 = self.taskSignals['LateralRearContactRate']
         u9 = self.taskSignals['LongitudinalFrontContact'].time_derivative()
         u10 = self.taskSignals['LateralFrontContact'].time_derivative()
-        
-        u1d = u1.time_derivative()
+
         u2d = u2.time_derivative()
         u3d = u3.time_derivative()
         u4d = u4.time_derivative()
@@ -932,30 +928,28 @@ class Run():
         u8d = u8.time_derivative()
         u9d = u9.time_derivative()
         u10d = u10.time_derivative()
-		
-        #import function
+
         f_1 = np.vectorize(steer_torque_slip)
         f_2 = np.vectorize(contact_forces_slip)
-        
         f_3 = np.vectorize(contact_forces_nonslip)
-		
+
         #calculation
         #steer torque slip
         T4_slip = f_1(V, l1, l2, mc, ic11, ic33, ic31, q2, q4, u1, u2, u4, u8, u9, u10, u1d, u2d, u4d, u8d, u10d)
-		
+
         Fx_r_s, Fy_r_s, Fx_f_s, Fy_f_s = f_2(V, l1, l2, mc, ic11, ic22, ic33, ic31, q1, q2, q4, u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
-		
+
         Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns = f_3(l1, l2, mc, q1, q2, q4, u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d)
-		
+
         #attributes: name and units, and taskSignals
         T4_slip.name = 'SteerTorque_Slip'
         T4_slip.units = 'newton*meter'
         self.taskSignals[T4_slip.name] = T4_slip
-		
+
         Fx_r_s.name = 'LongitudinalRearContactForce_Slip'
         Fx_r_s.units = 'newton'
         self.taskSignals[Fx_r_s.name] = Fx_r_s
-		
+
         Fy_r_s.name = 'LateralRearContactForce_Slip'
         Fy_r_s.units = 'newton'
         self.taskSignals[Fy_r_s.name] = Fy_r_s
