@@ -851,6 +851,11 @@ class Run():
 		q9, q10 = f(q1, q2, q3, q4, q7, p['d1'], p['d2'], p['d3'], p['rr'],
 			p['rf'])
 
+		q9.name = 'LongitudinalFrontContact'
+		q9.units = 'meter'
+		q10.name = 'LateralFrontContact'
+		q10.units = 'meter'
+
 		self.taskSignals['LongitudinalFrontContact'] = q9
 		self.taskSignals['LateralFrontContact'] = q10
 
