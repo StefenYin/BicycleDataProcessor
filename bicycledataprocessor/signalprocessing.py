@@ -613,7 +613,7 @@ def frame_acceleration(AccelerationX, AccelerationY, AccelerationZ,
 
 	downward_Acceleration = -(AccelerationX*np.sin(lam) - 
 			AccelerationY * np.tan(rollAngle) -
-			AccelerationZ * np.cos(lam)) / np.cos(rollAngle)
+			AccelerationZ * np.cos(lam)) * np.cos(rollAngle)
 
 
 	return forward_Acceleration, lateral_Acceleration, downward_Acceleration
