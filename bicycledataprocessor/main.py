@@ -742,8 +742,8 @@ class Run():
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_yaw_angle()
         self.compute_front_wheel_rate()
-        self.compute_front_rear_wheel_contact_forces()
         self.compute_contact_points_acceleration()
+        self.compute_front_rear_wheel_contact_forces()
 
         self.topSig = 'task'
 
@@ -927,9 +927,11 @@ class Run():
         #signals assignment --slip condition
         V = self.taskSignals['ForwardSpeed'].mean()
 
+        q1 = self.taskSignals['YawAngle']
         q2 = self.taskSignals['RollAngle']
         q4 = self.taskSignals['SteerAngle']
 
+        u1 = self.taskSignals['YawRate']
         u2 = self.taskSignals['RollRate']
         u3 = self.taskSignals['PitchRate']
         u4 = self.taskSignals['SteerRate']
@@ -940,6 +942,7 @@ class Run():
         u9 = self.taskSignals['LongitudinalFrontContact'].time_derivative()
         u10 = self.taskSignals['LateralFrontContact'].time_derivative()
 
+        u1d = u1.time_derivative()
         u2d = u2.time_derivative()
         u3d = u3.time_derivative()
         u4d = u4.time_derivative()
@@ -1046,7 +1049,7 @@ class Run():
         f = np.vectorize(contact_points_acceleration)
 
         u7d, u8d, u11d, u9d, u10d, u12d = f(FLongAcc, FLateralAcc, FDownAcc, 
-                        q1, q2, q3, 
+                        q1, q2, q4, 
                         u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d, 
                         d1, d2, d3, rr, rf, s1, s3)
 
@@ -1061,7 +1064,7 @@ class Run():
         u10d.name = 'FrontWheelContactPointLateralAcceleration'
         u10d.units = 'meter/second/second'
         u12d.name = 'FrontWheelContactPointDownwardAcceleration'
-        u12.units = 'meter/second/second'
+        u12d.units = 'meter/second/second'
 
         self.taskSignals[u7d.name] = u7d
         self.taskSignals[u8d.name] = u8d
