@@ -597,7 +597,7 @@ def frame_acceleration(AccelerationX, AccelerationY, AccelerationZ,
 
 	Returns
 	-------
-	forward_Acceleration : ndarray, shape(n,)
+	longitudinal_Acceleration : ndarray, shape(n,)
 		The forward acceleration of the bicycle frame in A['1'].
 	lateral_Acceleration : ndarray, shape(n,)
 		The lateral acceleration of the bicycle frame in A['2'].
@@ -605,7 +605,7 @@ def frame_acceleration(AccelerationX, AccelerationY, AccelerationZ,
 		The downward acceleration of the bicycle frame in A['3'].
 
 	'''
-	forward_Acceleration= AccelerationX * np.cos(lam) + AccelerationZ * np.sin(lam)
+	longitudinal_Acceleration= AccelerationX * np.cos(lam) + AccelerationZ * np.sin(lam)
 
 	lateral_Acceleration = np.cos(rollAngle) * (AccelerationY + AccelerationX * 
 			np.sin(lam) * np.tan(rollAngle) - 
@@ -616,4 +616,4 @@ def frame_acceleration(AccelerationX, AccelerationY, AccelerationZ,
 			AccelerationZ * np.cos(lam)) * np.cos(rollAngle)
 
 
-	return forward_Acceleration, lateral_Acceleration, downward_Acceleration
+	return longitudinal_Acceleration, lateral_Acceleration, downward_Acceleration
