@@ -945,10 +945,10 @@ class Run():
 		u4d = u4.time_derivative()
 		u5d = u5.time_derivative()
 		u6d = u6.time_derivative()
-		u7d = u7.time_derivative()
-		u8d = u8.time_derivative()
-		u9d = u9.time_derivative()
-		u10d = u10.time_derivative()
+		u7d = self.taskSignals['RearWheelContactPointLongitudinalAcceleration']
+		u8d = self.taskSignals['RearWheelContactPointLateralAcceleration']
+		u9d = self.taskSignals['FrontWheelContactPointLongitudinalAcceleration']
+		u10d = self.taskSignals['FrontWheelContactPointLateralAcceleration']
 
 		f_1 = np.vectorize(steer_torque_slip)
 		f_2 = np.vectorize(contact_forces_slip)
