@@ -956,11 +956,16 @@ class Run():
 
 		#calculation
 		#steer torque slip
-		T4_slip = f_1(V, l1, l2, mc, ic11, ic33, ic31, q2, q4, u1, u2, u4, u8, u9, u10, u1d, u2d, u4d, u8d, u10d)
+		T4_slip = f_1(V, l1, l2, mc, ic11, ic33, ic31, q2, q4, 
+					u1, u2, u4, u8, u9, u10, u1d, u2d, u4d, u8d, u10d)
 
-		Fx_r_s, Fy_r_s, Fx_f_s, Fy_f_s = f_2(V, l1, l2, mc, ic11, ic22, ic33, ic31, q1, q2, q4, u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
+		Fx_r_s, Fy_r_s, Fx_f_s, Fy_f_s = f_2(V, l1, l2, mc, 
+					ic11, ic22, ic33, ic31, q1, q2, q4, 
+					u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, 
+					u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
 
-		Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns = f_3(l1, l2, mc, q1, q2, q4, u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d)
+		Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns = f_3(l1, l2, mc, q1, q2, q4, 
+					u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d)
 
 		#attributes: name and units, and taskSignals
 		T4_slip.name = 'SteerTorque_Slip'
