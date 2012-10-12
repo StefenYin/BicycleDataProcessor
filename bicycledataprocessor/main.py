@@ -742,8 +742,8 @@ class Run():
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_yaw_angle()
         self.compute_front_wheel_rate()
-        self.compute_contact_points_acceleration()
-        self.compute_front_rear_wheel_contact_forces()
+        #self.compute_contact_points_acceleration()
+        #self.compute_front_rear_wheel_contact_forces()
 
         self.topSig = 'task'
 
@@ -878,7 +878,7 @@ class Run():
             bp['lam'], mp['rr'], mp['rf'])
 
         q1_front_wheel.name = 'FrontWheelYawAngle'
-        q1_front_wheel.units = 'meter'
+        q1_front_wheel.units = 'radian'
         self.taskSignals['FrontWheelYawAngle'] = q1_front_wheel
 
     def compute_front_wheel_rate(self):
@@ -1263,10 +1263,10 @@ class Run():
     def compute_frame_acceleration(self):
         """Calculate the frame acceleration in inertial frame, expressed by the
         the A frame coordinates which is after yaw movement."""
-        AccelerationX = self.truncatedSignals['AccelerationX']
-        AccelerationY = self.truncatedSignals['AccelerationY']
-        AccelerationZ = self.truncatedSignals['AccelerationZ']
-        rollAngle = self.truncatedSignals['RollAngle']
+        AccelerationX = self.truncatedSignals['AccelerationX'].filter(10.)
+        AccelerationY = self.truncatedSignals['AccelerationY'].filter(10.)
+        AccelerationZ = self.truncatedSignals['AccelerationZ'].filter(10.)
+        rollAngle = self.truncatedSignals['RollAngle'].filter(10.)
         lam = self.bicycleRiderParameters['lam']
 
         AccX, AccY, AccZ = sigpro.frame_acceleration(AccelerationX, 
