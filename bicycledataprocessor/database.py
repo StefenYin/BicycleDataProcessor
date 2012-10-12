@@ -361,6 +361,45 @@ class DataSet(object):
             pass
         self.close()
 
+    def select_runs(self, riders, maneuvers, environments):
+        """Returns a list of runs given a set of conditions.
+
+        Parameters
+        ----------
+        riders : list
+        All or a subset of ['Charlie', 'Jason', 'Luke'].
+        maneuvers : list
+        All or a subset of ['Balance', 'Balance With Disturbance', 
+                'Track Straight Line', 'Track Straight Line With Disturbance'].
+        environments : list
+        All or a subset of ['Horse Treadmill', 'Pavillion Floor'].
+
+        Returns
+        -------
+        runs : list
+        List of run numbers for the given conditions.
+
+        """
+
+        self.open()
+
+        table = self.database.root.runTable
+
+        runs = []
+        for row in table.iterrows():
+            con = []
+            con.append(row['Rider'] in riders)
+            con.append(row['Maneuver'] in maneuvers)
+            con.append(row['Environment'] in environments)
+            con.append(row['corrupt'] is not True)
+            con.append(int(row['RunID']) > 100)
+            if False not in con:
+                runs.append(row['RunID'])
+
+        self.close()
+
+        return runs
+
     def sync_data(self, directory='exports/'):
         """Synchronizes data to the biosport website."""
         user = 'biosport'
@@ -565,14 +604,15 @@ class DataSet(object):
         self.close()
 
     def fill_run_table(self, runs=None, overwrite=False):
-        """Adds all the data from the hdf5 files in the h5 directory to the run
-        information table and stores the time series data in arrays.
+        """Adds all the data from the mat files in pathToRun directory or from
+        the hdf5 files in the h5 directory to the run information table and
+        stores the time series data in arrays.
 
         Parameters
         ----------
         runs : string or list of strings, optional
-            If `run` is `all`, the entire directory of individual run files
-            will be added to the database. If `run` is a list of run ids, e.g.
+            If `runs` is `all`, the entire directory of individual run files
+            will be added to the database. If `runs` is a list of run ids, e.g.
             ['00345', '00346'], then those files will be added to the database.
             If run is the default `None`, then only the new files in the
             directory will be added.
