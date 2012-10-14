@@ -24,15 +24,12 @@ import matplotlib.pyplot as plt
 from tables import NoSuchNodeError
 
 import dtk.process as process
-<<<<<<< HEAD
-from dtk.bicycle import front_contact, benchmark_to_moore, front_wheel_rate, steer_torque_slip, contact_forces_slip, contact_forces_nonslip
-=======
+
 from dtk.bicycle import front_contact, benchmark_to_moore 
 from dtk.bicycle import front_wheel_yaw_angle, front_wheel_rate
 from dtk.bicycle import steer_torque_slip, contact_forces_slip, contact_forces_nonslip
 from dtk.bicycle import contact_points_acceleration
 
->>>>>>> origin/con_force_I
 import bicycleparameters as bp
 
 
@@ -866,8 +863,6 @@ class Run():
 
         self.taskSignals['LongitudinalFrontContact'] = q9
         self.taskSignals['LateralFrontContact'] = q10
-
-<<<<<<< HEAD
 
     def compute_front_wheel_rate(self):
         """Calculates the front wheel rate, based on the Jason's data 
