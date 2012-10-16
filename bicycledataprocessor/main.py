@@ -744,7 +744,7 @@ class Run():
         self.compute_front_wheel_yaw_angle()
         self.compute_front_wheel_rate()
         #self.compute_contact_points_acceleration()
-        #self.compute_front_rear_wheel_contact_forces()
+        #self.compute_contact_forces()
 
         self.topSig = 'task'
 
@@ -768,11 +768,12 @@ class Run():
 
         # compute the quantities that aren't task specific
         self.compute_pull_force()
+        self.compute_frame_acceleration()
         self.compute_forward_speed()
         self.compute_steer_rate()
         self.compute_yaw_roll_pitch_rates()
         self.compute_steer_torque()
-        self.compute_frame_acceleration()
+
 
     def truncate_signals(self):
         """Truncates the calibrated signals based on the time shift."""
@@ -906,7 +907,7 @@ class Run():
         self.taskSignals['FrontWheelRate'] = u6
 
 
-    def compute_front_rear_wheel_contact_forces(self):
+    def compute_contact_forces(self):
         """Calculate the contact forces for each 
         wheel with respect to inertial frame under
         the slip and nonslip condition. Also, provide 
@@ -1012,9 +1013,9 @@ class Run():
         """Calculates the acceleration of the contact points of front and rear
         wheels."""
 
-        FLongAcc= self.taskSignals['FrameLongitudinalAcceleration']
-        FLateralAcc = self.taskSignals['FrameLateralAcceleration']
-        FDownAcc = self.taskSignals['FrameDownwardAcceleration']
+        AccX= self.taskSignals['FrameAccelerationX']
+        AccY = self.taskSignals['FrameAccelerationY']
+        AccZ = self.taskSignals['FrameAccelerationZ']
 
         q1 = self.taskSignals['YawAngle']
         q2 = self.taskSignals['RollAngle']
@@ -1049,7 +1050,7 @@ class Run():
 
         f = np.vectorize(contact_points_acceleration)
 
-        u7d, u8d, u11d, u9d, u10d, u12d = f(FLongAcc, FLateralAcc, FDownAcc, 
+        u7d, u8d, u11d, u9d, u10d, u12d = f(AccX, AccY, AccZ, 
                         q1, q2, q4, 
                         u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d, 
                         d1, d2, d3, rr, rf, s1, s3)
@@ -1260,28 +1261,6 @@ class Run():
             self.computedSignals['RollRate'] = rr
             self.computedSignals['PitchRate'] = pr
 
-    def compute_frame_acceleration(self):
-        """Calculate the frame acceleration in inertial frame, expressed by the
-        the A frame coordinates which is after yaw movement."""
-        AccelerationX = self.truncatedSignals['AccelerationX'].filter(10.)
-        AccelerationY = self.truncatedSignals['AccelerationY'].filter(10.)
-        AccelerationZ = self.truncatedSignals['AccelerationZ'].filter(10.)
-        rollAngle = self.truncatedSignals['RollAngle'].filter(10.)
-        lam = self.bicycleRiderParameters['lam']
-
-        AccX, AccY, AccZ = sigpro.frame_acceleration(AccelerationX, 
-                            AccelerationY, AccelerationZ, lam, rollAngle=rollAngle)
-        AccX.units = 'meter/second/second'
-        AccX.name = 'FrameLongitudinalAcceleration'
-        AccY.units = 'meter/second/second'
-        AccY.name = 'FrameLateralAcceleration'
-        AccZ.units = 'meter/second/second'
-        AccZ.name = 'FrameDownwardAcceleration'
-
-        self.computedSignals[AccX.name] = AccX
-        self.computedSignals[AccY.name] = AccY
-        self.computedSignals[AccZ.name] = AccZ
-
     def compute_steer_rate(self):
         """Calculate the steer rate from the frame and fork rates."""
         try:
@@ -1330,6 +1309,36 @@ class Run():
             pullForce.name = 'PullForce'
             pullForce.units = 'newton'
             self.computedSignals[pullForce.name] = pullForce
+
+    def compute_frame_acceleration(self):
+        """
+        Computes the frame acceleration in inertial frame about body-fixed
+        coordinates, taken from the NV-100signal.
+
+        """
+        try:
+            AccX = self.truncatedSignals['AccelerationX']
+            AccY = self.truncatedSignals['AccelerationY']
+            AccZ = self.truncatedSignals['AccelerationZ']
+
+        except AttributeError:
+            print 'Accelerations from truncatedSignals were not available,'\
+                ' Accelerations for computedSignals are not computed'
+        else:
+            AccX = AccX.convert_units('meter/second/second')
+            AccX.name = 'FrameAccelerationX'
+            AccX.units = 'meter/second/second'
+            self.computedSignals[AccX.name] = AccX
+
+            AccY = AccY.convert_units('meter/second/second')
+            AccY.name = 'FrameAccelerationY'
+            AccY.units = 'meter/second/second'
+            self.computedSignals[AccY.name] = AccY
+
+            AccZ = AccZ.convert_units('meter/second/second')
+            AccZ.name = 'FrameAccelerationZ'
+            AccZ.units = 'meter/second/second'
+            self.computedSignals[AccZ.name] = AccZ
 
     def __str__(self):
         '''Prints basic run information to the screen.'''
