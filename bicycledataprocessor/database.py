@@ -93,9 +93,27 @@ class DataSet(object):
         self.processedCols = ['FrameAccelerationX',
                               'FrameAccelerationY',
                               'FrameAccelerationZ',
+                              'LongitudinalRearContactAcceleration'
+                              'LateralRearContactAcceleration'
+                              'DownwardRearContactAcceleration'
+                              'LongitudinalFrontContactAcceleration'
+                              'LateralFrontContactAcceleration'
+                              'DownwardFrontContactAcceleration'
+                              'YawAngle'
+                              'FrontWheelYawAngle'
+                              'SteerTorque_Slip'
+                              'LongitudinalRearContactForce_Slip'
+                              'LateralRearContactForce_Slip'
+                              'LongitudinalFrontContactForce_Slip'
+                              'LateralFrontContactForce_Slip'
+                              'LongitudinalRearContactForce_Nonslip'
+                              'LateralRearContactForce_Nonslip'
+                              'LongitudinalFrontContactForce_Nonslip'
+                              'LateralFrontContactForce_Nonslip'
                               'PitchRate',
                               'PullForce',
                               'RearWheelRate',
+                              'FrontWheelRate',
                               'RollAngle',
                               'RollRate',
                               'ForwardSpeed',
