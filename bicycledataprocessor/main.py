@@ -7,6 +7,7 @@ from math import pi
 from warnings import warn
 from ConfigParser import SafeConfigParser
 
+import pdb
 # debugging
 #try:
     #from IPython.core.debugger import Tracer
@@ -743,8 +744,8 @@ class Run():
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_yaw_angle()
         self.compute_front_wheel_rate()
-        #self.compute_contact_points_acceleration()
-        #self.compute_contact_forces()
+        self.compute_contact_points_acceleration()
+        self.compute_contact_forces()
 
         self.topSig = 'task'
 
@@ -968,6 +969,8 @@ class Run():
                     ic11, ic22, ic33, ic31, q1, q2, q4, 
                     u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, 
                     u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
+
+        pdb.set_trace()
 
         Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns = f_3(l1, l2, mc, q1, q2, q4, 
                     u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d)
