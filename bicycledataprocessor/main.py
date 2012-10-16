@@ -28,7 +28,18 @@ import dtk.process as process
 
 from dtk.bicycle import front_contact, benchmark_to_moore 
 from dtk.bicycle import front_wheel_yaw_angle, front_wheel_rate
-from dtk.bicycle import steer_torque_slip, contact_forces_slip, contact_forces_nonslip
+
+from dtk.bicycle import steer_torque_slip
+from dtk.bicycle import contact_force_rear_longitudinal_slip
+from dtk.bicycle import contact_force_rear_lateral_slip
+from dtk.bicycle import contact_force_front_longitudinal_slip
+from dtk.bicycle import contact_force_front_lateral_slip
+
+from dtk.bicycle import contact_force_rear_longitudinal_nonslip
+from dtk.bicycle import contact_force_rear_lateral_nonslip
+from dtk.bicycle import contact_force_front_longitudinal_nonslip
+from dtk.bicycle import contact_force_front_lateral_nonslip
+
 from dtk.bicycle import contact_points_acceleration
 
 import bicycleparameters as bp
@@ -746,8 +757,14 @@ class Run():
         self.compute_front_wheel_rate()
         self.compute_contact_points_acceleration()
         self.compute_steer_torque_slip()
-        self.compute_contact_forces_slip()
-        self.compute_contact_forces_nonslip()
+        self.compute_contact_force_rear_longitudinal_slip()
+        self.compute_contact_force_rear_lateral_slip()
+        self.compute_contact_force_front_longitudinal_slip()
+        self.compute_contact_force_front_lateral_slip()
+        self.compute_contact_force_rear_longitudinal_nonslip()
+        self.compute_contact_force_rear_lateral_nonslip()
+        self.compute_contact_force_front_longitudinal_nonslip()
+        self.compute_contact_force_front_lateral_nonslip()
 
         self.topSig = 'task'
 
@@ -944,8 +961,6 @@ class Run():
 
         f = np.vectorize(steer_torque_slip)
 
-        #calculation
-        #steer torque slip
         steerTorque_slip = f(V, l1, l2, mc, ic11, ic33, ic31, q2, q4, 
                     u1, u2, u4, u8, u9, u10, u1d, u2d, u4d, u8d, u10d)
 
@@ -953,9 +968,42 @@ class Run():
         steerTorque_slip.units = 'newton*meter'
         self.taskSignals[steerTorque_slip.name] = steerTorque_slip
 
-    def compute_contact_forces_slip(self):
-        """Calculate the contact forces of rear and front wheels with respect 
-        to inertial frame under the slip condition."""
+    def compute_contact_force_rear_longitudinal_slip(self):
+        """Calculate the longitudinal contact force of rear wheel under 
+        the slip condition"""
+
+        #parameters
+        bp = self.bicycleRiderParameters
+        mp = benchmark_to_moore(self.bicycleRiderParameters)
+
+        l1 = mp['l1']
+        l2 = mp['l2']
+        mc = mp['mc']
+        ic22 = mp['ic22']
+
+        u3 = self.taskSignals['PitchRate']
+        u5 = self.taskSignals['RearWheelRate']
+        u6 = self.taskSignals['FrontWheelRate']
+        u7 = self.taskSignals['LongitudinalRearContactRate']
+        u9 = self.taskSignals['LongitudinalFrontContact'].time_derivative()
+
+        u3d = u3.time_derivative()
+        u5d = u5.time_derivative()
+        u6d = u6.time_derivative()
+        u7d = self.taskSignals['LongitudinalRearContactAcceleration']
+        u9d = self.taskSignals['LongitudinalFrontContactAcceleration']
+
+        f = np.vectorize(contact_force_rear_longitudinal_slip)
+
+        Fx_r_s = f(l1, l2, mc, ic22, u3, u5, u6, u7, u9, u3d, u5d, u6d, u7d, u9d)
+
+        Fx_r_s.name = 'LongitudinalRearContactForce_Slip'
+        Fx_r_s.units = 'newton'
+        self.taskSignals[Fx_r_s.name] = Fx_r_s
+
+    def compute_contact_force_rear_lateral_slip(self):
+        """Calculate the lateral contact force of rear wheel under 
+        the slip condition"""
 
         #parameters
         bp = self.bicycleRiderParameters
@@ -997,32 +1045,115 @@ class Run():
         u9d = self.taskSignals['LongitudinalFrontContactAcceleration']
         u10d = self.taskSignals['LateralFrontContactAcceleration']
 
-        f = np.vectorize(contact_forces_slip)
+        f = np.vectorize(contact_force_rear_lateral_slip)
 
-        Fx_r_s, Fy_r_s, Fx_f_s, Fy_f_s = f(V, l1, l2, mc, 
-                    ic11, ic22, ic33, ic31, q1, q2, q4, 
-                    u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, 
-                    u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
-
-        Fx_r_s.name = 'LongitudinalRearContactForce_Slip'
-        Fx_r_s.units = 'newton'
-        self.taskSignals[Fx_r_s.name] = Fx_r_s
+        Fy_r_s = f(V, l1, l2, mc, ic11, ic22, ic33, ic31,
+                q1, q2, q4, u1, u2, u3, u4, u5, u6, u7, u8, u9, u10,
+                u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
 
         Fy_r_s.name = 'LateralRearContactForce_Slip'
         Fy_r_s.units = 'newton'
         self.taskSignals[Fy_r_s.name] = Fy_r_s
 
+    def compute_contact_force_front_longitudinal_slip(self):
+        """Calculate the longitudinal contact force of front wheel under 
+        the slip condition"""
+
+        #parameters
+        bp = self.bicycleRiderParameters
+        mp = benchmark_to_moore(self.bicycleRiderParameters)
+
+        l1 = mp['l1']
+        l2 = mp['l2']
+        mc = mp['mc']
+        ic11 = mp['ic11']
+        ic22 = mp['ic22']
+        ic33 = mp['ic33']
+        ic31 = mp['ic31']
+
+        V = self.taskSignals['ForwardSpeed'].mean()
+
+        q2 = self.taskSignals['RollAngle']
+        q4 = self.taskSignals['SteerAngle']
+
+        u1 = self.taskSignals['YawRate']
+        u2 = self.taskSignals['RollRate']
+        u3 = self.taskSignals['PitchRate']
+        u4 = self.taskSignals['SteerRate']
+        u5 = self.taskSignals['RearWheelRate']
+        u6 = self.taskSignals['FrontWheelRate']
+        u7 = self.taskSignals['LongitudinalRearContactRate']
+        u8 = self.taskSignals['LateralRearContactRate']
+        u9 = self.taskSignals['LongitudinalFrontContact'].time_derivative()
+        u10 = self.taskSignals['LateralFrontContact'].time_derivative()
+
+        u1d = u1.time_derivative()
+        u2d = u2.time_derivative()
+        u3d = u3.time_derivative()
+        u4d = u4.time_derivative()
+        u5d = u5.time_derivative()
+        u6d = u6.time_derivative()
+        u7d = self.taskSignals['LongitudinalRearContactAcceleration']
+        u8d = self.taskSignals['LateralRearContactAcceleration']
+        u9d = self.taskSignals['LongitudinalFrontContactAcceleration']
+        u10d = self.taskSignals['LateralFrontContactAcceleration']
+
+        f = np.vectorize(contact_force_front_longitudinal_slip)
+
+        Fx_f_s = f(V, l1, l2, mc, ic11, ic22, ic33, ic31,
+                q2, q4, u1, u2, u3, u4, u5, u6, u7, u8, u9, u10,
+                u1d, u2d, u3d, u4d, u5d, u6d, u7d, u8d, u9d, u10d)
+
         Fx_f_s.name = 'LongitudinalFrontContactForce_Slip'
         Fx_f_s.units = 'newton'
         self.taskSignals[Fx_f_s.name] = Fx_f_s
+
+    def compute_contact_force_front_lateral_slip(self):
+        """Calculate the lateral contact force of front wheel under 
+        the slip condition"""
+
+        #parameters
+        bp = self.bicycleRiderParameters
+        mp = benchmark_to_moore(self.bicycleRiderParameters)
+
+        l1 = mp['l1']
+        l2 = mp['l2']
+        mc = mp['mc']
+        ic11 = mp['ic11']
+        ic33 = mp['ic33']
+        ic31 = mp['ic31']
+
+        V = self.taskSignals['ForwardSpeed'].mean()
+
+        q1 = self.taskSignals['YawAngle']
+        q2 = self.taskSignals['RollAngle']
+        q4 = self.taskSignals['SteerAngle']
+
+        u1 = self.taskSignals['YawRate']
+        u2 = self.taskSignals['RollRate']
+        u4 = self.taskSignals['SteerRate']
+        u8 = self.taskSignals['LateralRearContactRate']
+        u9 = self.taskSignals['LongitudinalFrontContact'].time_derivative()
+        u10 = self.taskSignals['LateralFrontContact'].time_derivative()
+
+        u1d = u1.time_derivative()
+        u2d = u2.time_derivative()
+        u4d = u4.time_derivative()
+        u8d = self.taskSignals['LateralRearContactAcceleration']
+        u10d = self.taskSignals['LateralFrontContactAcceleration']
+
+        f = np.vectorize(contact_force_front_lateral_slip)
+
+        Fy_f_s = f(V, l1, l2, mc, ic11, ic33, ic31,
+                q1, q2, q4, u1, u2, u4, u8, u9, u10, u1d, u2d, u4d, u8d, u10d)
 
         Fy_f_s.name = 'LateralFrontContactForce_Slip'
         Fy_f_s.units = 'newton'
         self.taskSignals[Fy_f_s.name] = Fy_f_s
 
-    def compute_contact_forces_nonslip(self):
-        """Calculate the contact forces of rear and front wheels with respect 
-        to inertial frame under the nonlip condition."""
+    def compute_contact_force_rear_longitudinal_nonslip(self):
+        """Calculate the longitudinal contact force of rear wheel under 
+        the constraint condition"""
 
         #parameters
         bp = self.bicycleRiderParameters
@@ -1034,38 +1165,112 @@ class Run():
 
         q1 = self.taskSignals['YawAngle']
         q2 = self.taskSignals['RollAngle']
+
+        u1 = self.taskSignals['YawRate']
+        u2 = self.taskSignals['RollRate']
+        u3 = self.taskSignals['PitchRate']
+        u5 = self.taskSignals['RearWheelRate']
+
+        u1d = u1.time_derivative()
+        u2d = u2.time_derivative()
+        u3d = u3.time_derivative()
+        u5d = u5.time_derivative()
+
+        f = np.vectorize(contact_force_rear_longitudinal_nonslip)
+
+        Fx_r_ns = f(l1, l2, mc, q1, q2, u1, u2, u3, u5, u1d, u2d, u3d, u5d)
+
+        Fx_r_ns.name = 'LongitudinalRearContactForce_Nonslip'
+        Fx_r_ns.units = 'newton'
+        self.taskSignals[Fx_r_ns.name] = Fx_r_ns
+
+    def compute_contact_force_rear_lateral_nonslip(self):
+        """Calculate the lateral contact force of rear wheel under 
+        the constraint condition"""
+
+        #parameters
+        bp = self.bicycleRiderParameters
+        mp = benchmark_to_moore(self.bicycleRiderParameters)
+
+        bp = self.bicycleRiderParameters
+        mp = benchmark_to_moore(self.bicycleRiderParameters)
+
+        l1 = mp['l1']
+        l2 = mp['l2']
+        mc = mp['mc']
+
+        q1 = self.taskSignals['YawAngle']
+        q2 = self.taskSignals['RollAngle']
+
+        u1 = self.taskSignals['YawRate']
+        u2 = self.taskSignals['RollRate']
+        u3 = self.taskSignals['PitchRate']
+        u5 = self.taskSignals['RearWheelRate']
+
+        u1d = u1.time_derivative()
+        u2d = u2.time_derivative()
+        u3d = u3.time_derivative()
+        u5d = u5.time_derivative()
+
+        f = np.vectorize(contact_force_rear_lateral_nonslip)
+
+        Fy_r_ns = f(l1, l2, mc, q1, q2, u1, u2, u3, u5, u1d, u2d, u3d, u5d)
+
+        Fy_r_ns.name = 'LateralRearContactForce_Nonslip'
+        Fy_r_ns.units = 'newton'
+        self.taskSignals[Fy_r_ns.name] = Fy_r_ns
+
+    def compute_contact_force_front_longitudinal_nonslip(self):
+        """Calculate the longitudinal contact force of front wheel under 
+        the constraint condition"""
+
+        q1 = self.taskSignals['YawAngle']
+        q2 = self.taskSignals['RollAngle']
         q4 = self.taskSignals['SteerAngle']
 
         u1 = self.taskSignals['YawRate']
         u2 = self.taskSignals['RollRate']
         u3 = self.taskSignals['PitchRate']
         u4 = self.taskSignals['SteerRate']
-        u5 = self.taskSignals['RearWheelRate']
         u6 = self.taskSignals['FrontWheelRate']
 
         u1d = u1.time_derivative()
         u2d = u2.time_derivative()
         u3d = u3.time_derivative()
         u4d = u4.time_derivative()
-        u5d = u5.time_derivative()
         u6d = u6.time_derivative()
 
-        f = np.vectorize(contact_forces_nonslip)
+        f = np.vectorize(contact_force_front_longitudinal_nonslip)
 
-        Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns = f(l1, l2, mc, q1, q2, q4, 
-                    u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d)
-
-        Fx_r_ns.name = 'LongitudinalRearContactForce_Nonslip'
-        Fx_r_ns.units = 'newton'
-        self.taskSignals[Fx_r_ns.name] = Fx_r_ns
-
-        Fy_r_ns.name = 'LateralRearContactForce_Nonslip'
-        Fy_r_ns.units = 'newton'
-        self.taskSignals[Fy_r_ns.name] = Fy_r_ns
+        Fx_f_ns = f(q1, q2, q4, u1, u2, u3, u4, u6, u1d, u2d, u3d, u4d, u6d)
 
         Fx_f_ns.name = 'LongitudinalFrontContactForce_Nonslip'
         Fx_f_ns.units = 'newton'
         self.taskSignals[Fx_f_ns.name] = Fx_f_ns
+
+    def compute_contact_force_front_lateral_nonslip(self):
+        """Calculate the lateral contact force of front wheel under 
+        the constraint condition"""
+
+        q1 = self.taskSignals['YawAngle']
+        q2 = self.taskSignals['RollAngle']
+        q4 = self.taskSignals['SteerAngle']
+
+        u1 = self.taskSignals['YawRate']
+        u2 = self.taskSignals['RollRate']
+        u3 = self.taskSignals['PitchRate']
+        u4 = self.taskSignals['SteerRate']
+        u6 = self.taskSignals['FrontWheelRate']
+
+        u1d = u1.time_derivative()
+        u2d = u2.time_derivative()
+        u3d = u3.time_derivative()
+        u4d = u4.time_derivative()
+        u6d = u6.time_derivative()
+
+        f = np.vectorize(contact_force_front_lateral_nonslip)
+
+        Fy_f_ns = f(q1, q2, q4, u1, u2, u3, u4, u6, u1d, u2d, u3d, u4d, u6d)
 
         Fy_f_ns.name = 'LateralFrontContactForce_Nonslip'
         Fy_f_ns.units = 'newton'
