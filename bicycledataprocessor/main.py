@@ -950,10 +950,10 @@ class Run():
         u4d = u4.time_derivative()
         u5d = u5.time_derivative()
         u6d = u6.time_derivative()
-        u7d = self.taskSignals['RearWheelContactPointLongitudinalAcceleration']
-        u8d = self.taskSignals['RearWheelContactPointLateralAcceleration']
-        u9d = self.taskSignals['FrontWheelContactPointLongitudinalAcceleration']
-        u10d = self.taskSignals['FrontWheelContactPointLateralAcceleration']
+        u7d = self.taskSignals['LongitudinalRearContactAcceleration']
+        u8d = self.taskSignals['LateralRearContactAcceleration']
+        u9d = self.taskSignals['LongitudinalFrontContactAcceleration']
+        u10d = self.taskSignals['LateralFrontContactAcceleration']
 
         f_1 = np.vectorize(steer_torque_slip)
         f_2 = np.vectorize(contact_forces_slip)
@@ -1055,17 +1055,17 @@ class Run():
                         u1, u2, u3, u4, u5, u6, u1d, u2d, u3d, u4d, u5d, u6d, 
                         d1, d2, d3, rr, rf, s1, s3)
 
-        u7d.name = 'RearWheelContactPointLongitudinalAcceleration'
+        u7d.name = 'LongitudinalRearContactAcceleration'
         u7d.units = 'meter/second/second'
-        u8d.name = 'RearWheelContactPointLateralAcceleration'
+        u8d.name = 'LateralRearContactAcceleration'
         u8d.units = 'meter/second/second'
-        u11d.name = 'RearWheelContactPointDownwardAcceleration'
+        u11d.name = 'DownwardRearContactAcceleration'
         u11d.units = 'meter/second/second'
-        u9d.name = 'FrontWheelContactPointLongitudinalAcceleration'
+        u9d.name = 'LongitudinalFrontContactAcceleration'
         u9d.units = 'meter/second/second'
-        u10d.name = 'FrontWheelContactPointLateralAcceleration'
+        u10d.name = 'LateralFrontContactAcceleration'
         u10d.units = 'meter/second/second'
-        u12d.name = 'FrontWheelContactPointDownwardAcceleration'
+        u12d.name = 'DownwardFrontContactAcceleration'
         u12d.units = 'meter/second/second'
 
         self.taskSignals[u7d.name] = u7d
