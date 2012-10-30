@@ -856,7 +856,7 @@ class Run():
         q4 = self.taskSignals['RollAngle']
         q7 = self.taskSignals['SteerAngle']
 
-        p = benchmark_to_moore(self.bicycleRiderParameters)
+        p = self.bicycleRiderMooreParameters
 
         f = np.vectorize(front_contact)
         q9, q10 = f(q1, q2, q3, q4, q7, p['d1'], p['d2'], p['d3'], p['rr'],
