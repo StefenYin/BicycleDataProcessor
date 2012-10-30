@@ -736,6 +736,7 @@ class Run():
         self.compute_rear_wheel_contact_rates()
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
+        self.compute_front_wheel_rate()
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -807,7 +808,6 @@ class Run():
     def compute_rear_wheel_rate(self):
         """
         Computes computedSignals of the rear wheel rate from truncatedSignals.
-
         """
         try:
             rearWheelRate = self.truncatedSignals['RearWheelRate']
@@ -820,6 +820,30 @@ class Run():
             rearWheelRate.units = 'radian/second'
             self.computedSignals[rearWheelRate.name] = rearWheelRate
 
+    def compute_front_wheel_rate(self):
+        """Calculates the front wheel rate based on the data of rear_wheel_rate.
+        """
+
+        bp = self.bicycleRiderParameters
+        mp = self.bicycleRiderMooreParameters
+
+        q2 = self.taskSignals['RollAngle']
+        q3 = bp['lam']
+        q4 = self.taskSignals['SteerAngle']
+        u1 = self.taskSignals['YawRate']
+        u1 = self.taskSignals['YawRate']
+        u2 = self.taskSignals['RollRate']
+        u3 = self.taskSignals['PitchRate']
+        u5 = self.taskSignals['RearWheelRate']
+
+        f = np.vectorize(bi.front_wheel_rate)
+
+        u6 = f(q2, q3, q4, u1, u2, u3, u5, mp['rr'], mp['rf'], 
+                mp['d1'], mp['d2'], mp['d3'])
+
+        u6.name = 'FrontWheelRate'
+        u6.units = 'radian/second'
+        self.taskSignals['FrontWheelRate'] = u6
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground
