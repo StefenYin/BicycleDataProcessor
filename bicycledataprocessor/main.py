@@ -1231,6 +1231,9 @@ class Run():
         self.bicycleRiderParameters =\
             bp.io.remove_uncertainties(self.bicycle.parameters['Benchmark'])
 
+        self.bicycleRiderMooreParameters =\
+            benchmark_to_moore(self.bicycleRiderParameters)
+
     def plot(self, *args, **kwargs):
         '''
         Returns a plot of the time series of various signals.
