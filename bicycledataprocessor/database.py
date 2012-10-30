@@ -96,7 +96,9 @@ class DataSet(object):
                               'PitchRate',
                               'PullForce',
                               'RearWheelRate',
-							  'FrontWheelRate'
+                              'FrontWheelRate'
+                              'FrontWheelYawAngle'
+                              'FrontWheelSteerAngle'
                               'RollAngle',
                               'RollRate',
                               'ForwardSpeed',

@@ -737,6 +737,7 @@ class Run():
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_rate()
+        self.compute_front_wheel_steer_yaw_angle()
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -844,6 +845,29 @@ class Run():
         u6.name = 'FrontWheelRate'
         u6.units = 'radian/second'
         self.taskSignals['FrontWheelRate'] = u6
+
+    def compute_front_wheel_steer_yaw_angle(self):
+        """Calculates the yaw angle of the front wheel.
+        """
+
+        bp = self.bicycleRiderParameters
+
+        q1 = self.taskSignals['YawAngle']
+        q2 = self.taskSignals['RollAngle']
+        q3 = bp['lam']
+        q4 = self.taskSignals['SteerAngle']
+
+        f = np.vectorize(bi.front_wheel_steer_yaw_angle)
+
+        frontWheel_SteerAngle, frontWheel_YawAngle = f(q1, q2, q3, q4)
+
+        frontWheel_SteerAngle.name = 'FrontWheelSteerAngle'
+        frontWheel_SteerAngle.units = 'radian'
+        self.taskSignals['FrontWheelSteerAngle'] = frontWheel_SteerAngle
+
+        frontWheel_YawAngle.name = 'FrontWheelYawAngle'
+        frontWheel_YawAngle.units = 'radian'
+        self.taskSignals['FrontWheelYawAngle'] = frontWheel_YawAngle
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground
