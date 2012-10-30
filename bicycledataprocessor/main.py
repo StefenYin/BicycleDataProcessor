@@ -735,7 +735,6 @@ class Run():
         self.compute_rear_wheel_contact_rates()
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
-
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -762,6 +761,7 @@ class Run():
         self.compute_steer_rate()
         self.compute_yaw_roll_pitch_rates()
         self.compute_steer_torque()
+        self.compute_rear_wheel_rate()
 
     def truncate_signals(self):
         """Truncates the calibrated signals based on the time shift."""
@@ -802,6 +802,23 @@ class Run():
             raise TimeShiftError(('The normalized root mean square for this ' +
                 'time shift is {}, which is greater '.format(str(nrms)) +
                 'than the maximum allowed: {}'.format(str(maxNRMS))))
+
+    def compute_rear_wheel_rate(self):
+        """
+        Computes computedSignals of the rear wheel rate from truncatedSignals.
+
+        """
+        try:
+            rearWheelRate = self.truncatedSignals['RearWheelRate']
+        except AttributeError:
+            print('RearWheelRate is not availabe.')
+        else:
+            rearWheelRate = rearWheelRate.convert_units('radian/second')
+
+            rearWheelRate.name = 'RearWheelRate'
+            rearWheelRate.units = 'radian/second'
+            self.computedSignals[rearWheelRate.name] = rearWheelRate
+
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground
