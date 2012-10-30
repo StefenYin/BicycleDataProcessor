@@ -24,7 +24,8 @@ import matplotlib.pyplot as plt
 from tables import NoSuchNodeError
 
 import dtk.process as process
-from dtk.bicycle import front_contact, benchmark_to_moore
+import dtk.bicycle as bi
+
 import bicycleparameters as bp
 
 # local dependencies
@@ -858,7 +859,7 @@ class Run():
 
         p = self.bicycleRiderMooreParameters
 
-        f = np.vectorize(front_contact)
+        f = np.vectorize(bi.front_contact)
         q9, q10 = f(q1, q2, q3, q4, q7, p['d1'], p['d2'], p['d3'], p['rr'],
             p['rf'])
 
@@ -1232,7 +1233,7 @@ class Run():
             bp.io.remove_uncertainties(self.bicycle.parameters['Benchmark'])
 
         self.bicycleRiderMooreParameters =\
-            benchmark_to_moore(self.bicycleRiderParameters)
+            bi.benchmark_to_moore(self.bicycleRiderParameters)
 
     def plot(self, *args, **kwargs):
         '''
