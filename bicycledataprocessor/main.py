@@ -740,6 +740,9 @@ class Run():
         self.compute_front_wheel_steer_yaw_angle()
         self.compute_signals_derivatives()
         self.compute_contact_force_rear_longitudinal_N1_nonslip()
+        self.compute_contact_force_rear_lateral_N2_nonslip()
+        self.compute_contact_force_front_longitudinal_N1_nonslip()
+        self.compute_contact_force_front_lateral_N2_nonslip()
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -916,9 +919,51 @@ class Run():
 
         Fx_r_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
-        Fx_r_ns.name = 'LongitudinalRearContactForce_Nonslip'
+        Fx_r_ns.name = 'LongRearConForce_Nonslip'
         Fx_r_ns.units = 'newton'
         self.taskSignals[Fx_r_ns.name] = Fx_r_ns
+
+    def compute_contact_force_rear_lateral_N2_nonslip(self):
+        """Calculate the lateral contact force of rear wheel under 
+        the constraint condition."""
+
+        bp = self.bicycleRiderParameters
+
+        f = np.vectorize(bi.contact_force_rear_lateral_N2_nonslip)
+
+        Fy_r_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        Fy_r_ns.name = 'LatRearConForce_Nonslip'
+        Fy_r_ns.units = 'newton'
+        self.taskSignals[Fy_r_ns.name] = Fy_r_ns
+
+    def compute_contact_force_front_longitudinal_N1_nonslip(self):
+        """Calculate the longitudinal contact force of front wheel under 
+        the constraint condition."""
+
+        bp = self.bicycleRiderParameters
+
+        f = np.vectorize(bi.contact_force_front_longitudinal_N1_nonslip)
+
+        Fx_f_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        Fx_f_ns.name = 'LongFrontConForce_Nonslip'
+        Fx_f_ns.units = 'newton'
+        self.taskSignals[Fx_f_ns.name] = Fx_f_ns
+
+    def compute_contact_force_front_lateral_N2_nonslip(self):
+        """Calculate the lateral contact force of front wheel under 
+        the constraint condition."""
+
+        bp = self.bicycleRiderParameters
+
+        f = np.vectorize(bi.contact_force_front_lateral_N2_nonslip)
+
+        Fy_f_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        Fy_f_ns.name = 'LatFrontConForce_Nonslip'
+        Fy_f_ns.units = 'newton'
+        self.taskSignals[Fy_f_ns.name] = Fy_f_ns
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground
