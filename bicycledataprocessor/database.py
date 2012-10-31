@@ -99,6 +99,7 @@ class DataSet(object):
                               'FrontWheelRate'
                               'FrontWheelYawAngle'
                               'FrontWheelSteerAngle'
+							  'LongitudinalRearContactForce_Nonslip'
                               'RollAngle',
                               'RollRate',
                               'ForwardSpeed',

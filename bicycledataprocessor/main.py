@@ -738,6 +738,8 @@ class Run():
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_rate()
         self.compute_front_wheel_steer_yaw_angle()
+        self.compute_signals_derivatives()
+        self.compute_contact_force_rear_longitudinal_N1_nonslip()
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -866,8 +868,57 @@ class Run():
         self.taskSignals['FrontWheelSteerAngle'] = frontWheel_SteerAngle
 
         frontWheel_YawAngle.name = 'FrontWheelYawAngle'
-        frontWheel_YawAngle.units = 'radian'
+        frontWheel_YawAngle.unitss = 'radian'
         self.taskSignals['FrontWheelYawAngle'] = frontWheel_YawAngle
+
+    def compute_signals_derivatives(self):
+        """Calculate the acceleration of some signals by time_derivative.
+        """
+
+        try:
+            yawRate = self.taskSignals['YawRate']
+            rollRate = self.taskSignals['RollRate']
+            pitchRate = self.taskSignals['PitchRate']
+            steerRate = self.taskSignals['SteerRate']
+            rearWheelRate = self.taskSignals['RearWheelRate']
+            frontWheelRate = self.taskSignals['FrontWheelRate']
+        except AttributeError:
+            print('YawRate, RollRate, PitchRate, SteerRate, or/and '\
+             'RearWheelRate, FrontWheelRate are not availabe.')
+        else:
+            yawAcc = yawRate.time_derivative()
+            rollAcc = rollRate.time_derivative()
+            pitchAcc = pitchRate.time_derivative()
+            steerAcc = steerRate.time_derivative()
+            rearWheelAcc = rearWheelRate.time_derivative()
+            frontWheelAcc = frontWheelRate.time_derivative()
+            
+            yawAcc.name = 'YawAcc'
+            self.taskSignals[yawAcc.name] = yawAcc
+            rollAcc.name = 'RollAcc'
+            self.taskSignals[rollAcc.name] = rollAcc
+            pitchAcc.name = 'PitchAcc'
+            self.taskSignals[pitchAcc.name] = pitchAcc
+            steerAcc.name = 'SteerAcc'
+            self.taskSignals[steerAcc.name] = steerAcc
+            rearWheelAcc.name = 'RearWheelAcc'
+            self.taskSignals[rearWheelAcc.name] = rearWheelAcc
+            frontWheelAcc.name = 'FrontWheelAcc'
+            self.taskSignals[frontWheelAcc.name] = frontWheelAcc
+
+    def compute_contact_force_rear_longitudinal_N1_nonslip(self):
+        """Calculate the longitudinal contact force of rear wheel under 
+        the constraint condition."""
+
+        bp = self.bicycleRiderParameters
+
+        f = np.vectorize(bi.contact_force_rear_longitudinal_N1_nonslip)
+
+        Fx_r_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        Fx_r_ns.name = 'LongitudinalRearContactForce_Nonslip'
+        Fx_r_ns.units = 'newton'
+        self.taskSignals[Fx_r_ns.name] = Fx_r_ns
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground
