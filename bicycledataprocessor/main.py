@@ -17,6 +17,7 @@ from ConfigParser import SafeConfigParser
 
 # dependencies
 import numpy as np
+from numpy import sin, cos
 from scipy import io
 from scipy.integrate import cumtrapz
 from scipy.optimize import curve_fit
@@ -739,10 +740,8 @@ class Run():
         self.compute_front_wheel_rate()
         self.compute_front_wheel_steer_yaw_angle()
         self.compute_signals_derivatives()
-        self.compute_contact_force_rear_longitudinal_N1_nonslip()
-        self.compute_contact_force_rear_lateral_N2_nonslip()
-        self.compute_contact_force_front_longitudinal_N1_nonslip()
-        self.compute_contact_force_front_lateral_N2_nonslip()
+        self.compute_contact_force_nonslip()
+
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -909,57 +908,43 @@ class Run():
             frontWheelAcc.name = 'FrontWheelAcc'
             self.taskSignals[frontWheelAcc.name] = frontWheelAcc
 
-    def compute_contact_force_rear_longitudinal_N1_nonslip(self):
-        """Calculate the longitudinal contact force of rear wheel under 
-        the constraint condition."""
+    def compute_contact_force_nonslip(self):
+        """Calculate the contact force of each wheel under the constraint 
+        condition. Here, the forces are expressed by body-fixed coordinates."""
 
         bp = self.bicycleRiderParameters
 
-        f = np.vectorize(bi.contact_force_rear_longitudinal_N1_nonslip)
+        f0 = np.vectorize(bi.contact_force_rear_longitudinal_N1_nonslip)
+        Fx_r_n = f0(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
-        Fx_r_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+        f1 = np.vectorize(bi.contact_force_rear_lateral_N2_nonslip)
+        Fy_r_n = f1(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        f2 = np.vectorize(bi.contact_force_front_longitudinal_N1_nonslip)
+        Fx_f_n = f2(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        f3 = np.vectorize(bi.contact_force_front_lateral_N2_nonslip)
+        Fy_f_n = f3(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
+
+        yawAngle = self.taskSignals['YawAngle']
+        frontWheelYawAngle = self.taskSignals['FrontWheelYawAngle']
+
+        Fx_r_ns = cos(yawAngle) * Fx_r_n + sin(yawAngle) * Fy_r_n
+        Fy_r_ns = -sin(yawAngle) * Fx_r_n + cos(yawAngle) * Fy_r_n 
+        Fx_f_ns = cos(frontWheelYawAngle) * Fx_f_n + sin(frontWheelYawAngle) * Fy_f_n
+        Fy_f_ns = -sin(frontWheelYawAngle) * Fx_f_n + cos(frontWheelYawAngle) * Fy_f_n
 
         Fx_r_ns.name = 'LongRearConForce_Nonslip'
         Fx_r_ns.units = 'newton'
         self.taskSignals[Fx_r_ns.name] = Fx_r_ns
 
-    def compute_contact_force_rear_lateral_N2_nonslip(self):
-        """Calculate the lateral contact force of rear wheel under 
-        the constraint condition."""
-
-        bp = self.bicycleRiderParameters
-
-        f = np.vectorize(bi.contact_force_rear_lateral_N2_nonslip)
-
-        Fy_r_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
-
         Fy_r_ns.name = 'LatRearConForce_Nonslip'
         Fy_r_ns.units = 'newton'
         self.taskSignals[Fy_r_ns.name] = Fy_r_ns
 
-    def compute_contact_force_front_longitudinal_N1_nonslip(self):
-        """Calculate the longitudinal contact force of front wheel under 
-        the constraint condition."""
-
-        bp = self.bicycleRiderParameters
-
-        f = np.vectorize(bi.contact_force_front_longitudinal_N1_nonslip)
-
-        Fx_f_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
-
         Fx_f_ns.name = 'LongFrontConForce_Nonslip'
         Fx_f_ns.units = 'newton'
         self.taskSignals[Fx_f_ns.name] = Fx_f_ns
-
-    def compute_contact_force_front_lateral_N2_nonslip(self):
-        """Calculate the lateral contact force of front wheel under 
-        the constraint condition."""
-
-        bp = self.bicycleRiderParameters
-
-        f = np.vectorize(bi.contact_force_front_lateral_N2_nonslip)
-
-        Fy_f_ns = f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
         Fy_f_ns.name = 'LatFrontConForce_Nonslip'
         Fy_f_ns.units = 'newton'
