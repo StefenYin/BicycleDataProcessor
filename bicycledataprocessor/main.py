@@ -7,6 +7,8 @@ from math import pi
 from warnings import warn
 from ConfigParser import SafeConfigParser
 
+import pdb
+
 # debugging
 #try:
     #from IPython.core.debugger import Tracer
@@ -28,6 +30,7 @@ import dtk.process as process
 import dtk.bicycle as bi
 
 import bicycleparameters as bp
+from bicycleparameters import com as com
 
 # local dependencies
 from database import get_row_num, get_cell, pad_with_zeros, run_id_string
@@ -737,9 +740,7 @@ class Run():
         self.compute_rear_wheel_contact_rates()
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
-        self.compute_front_wheel_rate()
         self.compute_front_wheel_steer_yaw_angle()
-        self.compute_signals_derivatives()
         self.compute_contact_force_nonslip()
 
         self.topSig = 'task'
@@ -753,6 +754,9 @@ class Run():
                     'PushButton',
                     'RearWheelRate',
                     'RollAngle',
+                    'AccelerationX',
+                    'AccelerationY',
+                    'AccelerationZ',
                     'SteerAngle',
                     'ThreeVolts']
         for sig in noChange:
@@ -769,6 +773,9 @@ class Run():
         self.compute_yaw_roll_pitch_rates()
         self.compute_steer_torque()
         self.compute_rear_wheel_rate()
+        self.compute_front_wheel_rate()
+        self.compute_computedsignals_derivatives()
+        self.compute_frame_masscenter_acceleration()
 
     def truncate_signals(self):
         """Truncates the calibrated signals based on the time shift."""
@@ -832,14 +839,13 @@ class Run():
         bp = self.bicycleRiderParameters
         mp = self.bicycleRiderMooreParameters
 
-        q2 = self.taskSignals['RollAngle']
+        q2 = self.computedSignals['RollAngle']
         q3 = bp['lam']
-        q4 = self.taskSignals['SteerAngle']
-        u1 = self.taskSignals['YawRate']
-        u1 = self.taskSignals['YawRate']
-        u2 = self.taskSignals['RollRate']
-        u3 = self.taskSignals['PitchRate']
-        u5 = self.taskSignals['RearWheelRate']
+        q4 = self.computedSignals['SteerAngle']
+        u1 = self.computedSignals['YawRate']
+        u2 = self.computedSignals['RollRate']
+        u3 = self.computedSignals['PitchRate']
+        u5 = self.computedSignals['RearWheelRate']
 
         f = np.vectorize(bi.front_wheel_rate)
 
@@ -848,7 +854,7 @@ class Run():
 
         u6.name = 'FrontWheelRate'
         u6.units = 'radian/second'
-        self.taskSignals['FrontWheelRate'] = u6
+        self.computedSignals['FrontWheelRate'] = u6
 
     def compute_front_wheel_steer_yaw_angle(self):
         """Calculates the yaw angle of the front wheel.
@@ -873,20 +879,21 @@ class Run():
         frontWheel_YawAngle.unitss = 'radian'
         self.taskSignals['FrontWheelYawAngle'] = frontWheel_YawAngle
 
-    def compute_signals_derivatives(self):
-        """Calculate the acceleration of some signals by time_derivative.
+    def compute_computedsignals_derivatives(self):
+        """Calculate the acceleration of some tasksignals by time_derivative.
         """
 
         try:
-            yawRate = self.taskSignals['YawRate']
-            rollRate = self.taskSignals['RollRate']
-            pitchRate = self.taskSignals['PitchRate']
-            steerRate = self.taskSignals['SteerRate']
-            rearWheelRate = self.taskSignals['RearWheelRate']
-            frontWheelRate = self.taskSignals['FrontWheelRate']
+            yawRate = self.computedSignals['YawRate']
+            rollRate = self.computedSignals['RollRate']
+            pitchRate = self.computedSignals['PitchRate']
+            steerRate = self.computedSignals['SteerRate']
+            rearWheelRate = self.computedSignals['RearWheelRate']
+            frontWheelRate = self.computedSignals['FrontWheelRate']
         except AttributeError:
             print('YawRate, RollRate, PitchRate, SteerRate, or/and '\
-             'RearWheelRate, FrontWheelRate are not availabe.')
+             'RearWheelRate, FrontWheelRate are not availabe, so'\
+             'computedSignals of their time_derivative cannot be computed')
         else:
             yawAcc = yawRate.time_derivative()
             rollAcc = rollRate.time_derivative()
@@ -896,17 +903,17 @@ class Run():
             frontWheelAcc = frontWheelRate.time_derivative()
             
             yawAcc.name = 'YawAcc'
-            self.taskSignals[yawAcc.name] = yawAcc
+            self.computedSignals[yawAcc.name] = yawAcc
             rollAcc.name = 'RollAcc'
-            self.taskSignals[rollAcc.name] = rollAcc
+            self.computedSignals[rollAcc.name] = rollAcc
             pitchAcc.name = 'PitchAcc'
-            self.taskSignals[pitchAcc.name] = pitchAcc
+            self.computedSignals[pitchAcc.name] = pitchAcc
             steerAcc.name = 'SteerAcc'
-            self.taskSignals[steerAcc.name] = steerAcc
+            self.computedSignals[steerAcc.name] = steerAcc
             rearWheelAcc.name = 'RearWheelAcc'
-            self.taskSignals[rearWheelAcc.name] = rearWheelAcc
+            self.computedSignals[rearWheelAcc.name] = rearWheelAcc
             frontWheelAcc.name = 'FrontWheelAcc'
-            self.taskSignals[frontWheelAcc.name] = frontWheelAcc
+            self.computedSignals[frontWheelAcc.name] = frontWheelAcc
 
     def compute_contact_force_nonslip(self):
         """Calculate the contact force of each wheel under the constraint 
@@ -949,6 +956,36 @@ class Run():
         Fy_f_ns.name = 'LatFrontConForce_Nonslip'
         Fy_f_ns.units = 'newton'
         self.taskSignals[Fy_f_ns.name] = Fy_f_ns
+
+    def compute_frame_masscenter_acceleration(self):
+        """Calculate the accelerations of total mass center of the bicycle, 
+        expressed by A coordinates from accelerometer acceleration.
+        """
+        bp = self.bicycleRiderParameters
+        mp = self.bicycleRiderMooreParameters
+
+        coordinates = np.array([[0, bp['xB'], bp['xH'], bp['w']], [-bp['rR'], 
+                    bp['zB'], bp['zH'], -bp['rF']]])
+        masses = np.array([[bp['mR'], bp['mB'], bp['mH'], bp['mF']]])
+        mT, cT = com.total_com(coordinates, masses)
+        xt = cT[0]; zt = cT[1]
+
+        ds1 = self.bicycle.parameters['Measured']['ds1']
+        ds3 = self.bicycle.parameters['Measured']['ds3']
+        s3 = ds3
+        s1 = ds1 + mp['l4']
+
+        f = np.vectorize(sigpro.frame_masscenter_acceleration)
+        frameAccLong, frameAccLat = f(bp['lam'], xt, zt, s1, s3, 
+                    mp, self.computedSignals)
+
+        frameAccLong.name = 'FrameAccLong'
+        frameAccLong.units = 'meter/second/second'
+        self.computedSignals[frameAccLong.name] = frameAccLong
+
+        frameAccLat.name = 'FrameAccLat'
+        frameAccLat.units = 'meter/second/second'
+        self.computedSignals[frameAccLat.name] = frameAccLat
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground

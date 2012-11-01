@@ -94,30 +94,32 @@ class DataSet(object):
                               'FrameAccelerationY',
                               'FrameAccelerationZ',
                               'PitchRate',
-							  'PitchAcc'
+                              'PitchAcc'
                               'PullForce',
                               'RearWheelRate',
-							  'RearWheelAcc'
+                              'RearWheelAcc'
                               'FrontWheelRate'
-							  'FrontWheelAcc'
+                              'FrontWheelAcc'
                               'FrontWheelYawAngle'
                               'FrontWheelSteerAngle'
-							  'LongRearConForce_Nonslip'
-							  'LatRearConForce_Nonslip'
-							  'LongFrontConForce_Nonslip'
-							  'LatFrontConForce_Nonslip'
+                              'LongRearConForce_Nonslip'
+                              'LatRearConForce_Nonslip'
+                              'LongFrontConForce_Nonslip'
+                              'LatFrontConForce_Nonslip'
+                              'FrameAccLong'
+                              'FrameAccLat'
                               'RollAngle',
                               'RollRate',
-							  'RollAcc'
+                              'RollAcc'
                               'ForwardSpeed',
                               'SteerAngle',
                               'SteerRate',
-							  'SteerAcc'
+                              'SteerAcc'
                               'SteerTorque',
                               'tau', # why tau?
-							  'YawAngle'
+                              'YawAngle'
                               'YawRate'
-							  'YawAcc']
+                              'YawAcc']
 
     def _task_table_class(self):
         """Creates a class that is used to describe the table containing meta

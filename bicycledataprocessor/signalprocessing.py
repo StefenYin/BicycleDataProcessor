@@ -9,6 +9,7 @@
 
 from warnings import warn
 
+import pdb
 # dependencies
 import numpy as np
 from scipy.interpolate import UnivariateSpline
@@ -17,6 +18,7 @@ import matplotlib.pyplot as plt # only for testing
 
 from dtk.process import time_vector, butterworth, normalize, subtract_mean
 
+from numpy import sin, cos
 # local dependencies
 from bdpexceptions import TimeShiftError
 #from signalprocessing import *
@@ -289,6 +291,90 @@ def steer_torque(components):
     """
 
     return np.sum(components.values(), axis=0)
+
+def frame_masscenter_acceleration(lam, xt, zt, s1, s3, mooreParameters, computedSignals):
+
+    """Returns the acceleration of total mass center with respect to the 
+    inertial frame N, expressed by body-fixed coordinates A.
+
+    Paramters
+    ---------
+
+    lam : float
+        The tilt angle.
+    xt : float
+        The position of total mass center expressed by B frame 
+        coordinates, B['1'].
+    zt : float
+        The position of total mass center expressed by B frame 
+        coordinates, B['2'].
+    s1: float
+        The distance in the c3> direction from the steer axis foot to 
+        the VN-100 position.
+    s3 : float
+        The distance in the c1> direction from the steer axis foot to 
+        the VN-100 position
+    mooreParameters : dictionary
+        A dictionary of bicycle parameters with a rider in MOORE' set, not
+        Benchmark's set.
+    taskSignals : dictionary
+        A dictionary of various states signals, including the acceleration
+        from accelerometer.
+
+    Returns
+    -------
+    frameAccLong : float
+        Total mass center longitudinal acceleration in A['1'].
+    frameAccLat : float
+        Total mass center lateral acceleration in A['2'].
+    """
+
+    mp = mooreParameters
+    cs = computedSignals
+
+    rr = mp['rr']; d1 = mp['d1']; d2 = mp['d2']
+
+    q2 = cs['RollAngle']; q3 = lam
+
+    u1 = cs['YawRate'];  u2 = cs['RollRate']; u3 = cs['PitchRate']
+
+    u1d = cs['YawAcc']; u2d = cs['RollAcc']; u3d = cs['PitchAcc']
+
+    vn1 = cs['AccelerationX']; vn2 = cs['AccelerationY']; vn3 = cs['AccelerationZ']
+
+    frameAccLong = -xt*(u1*sin(q2) + u3)**2 + (rr + zt)*(u1*u2*cos(q2) + sin(q2)*u1d +\
+        u3d) - (xt*u1*cos(q2) - (rr + zt)*u2)*u1*cos(q2) + (-(-d1 -\
+        s3)*(u1*sin(q2) + u3)**2 + (-d2 - s1)*(u1*u2*cos(q2) +\
+        sin(q2)*u1d + u3d) - ((-d1 - s3)*(u1*cos(q2)*cos(q3) +\
+        u2*sin(q3)) - (-d2 - s1)*(-u1*sin(q3)*cos(q2) +\
+        u2*cos(q3)))*(u1*cos(q2)*cos(q3) + u2*sin(q3)) + vn1)*cos(q3) +\
+        (-(-d1 - s3)*(u1*u2*cos(q2) + sin(q2)*u1d + u3d) - (-d2 -\
+        s1)*(u1*sin(q2) + u3)**2 + ((-d1 - s3)*(u1*cos(q2)*cos(q3) +\
+        u2*sin(q3)) - (-d2 - s1)*(-u1*sin(q3)*cos(q2) +\
+        u2*cos(q3)))*(-u1*sin(q3)*cos(q2) + u2*cos(q3)) + vn3)*sin(q3)
+
+    frameAccLat = -(-xt*(u1*u2*cos(q2) + sin(q2)*u1d + u3d) -\
+        (rr + zt)*(u1*sin(q2) +\
+        u3)**2 + (xt*u1*cos(q2) - (rr + zt)*u2)*u2)*sin(q2) + (-(-d1 -\
+        s3)*(u1*sin(q2) + u3)**2 + (-d2 - s1)*(u1*u2*cos(q2) +\
+        sin(q2)*u1d + u3d) - ((-d1 - s3)*(u1*cos(q2)*cos(q3) +\
+        u2*sin(q3)) - (-d2 - s1)*(-u1*sin(q3)*cos(q2) +\
+        u2*cos(q3)))*(u1*cos(q2)*cos(q3) + u2*sin(q3)) +\
+        vn1)*sin(q2)*sin(q3) - (-(-d1 - s3)*(u1*u2*cos(q2) + sin(q2)*u1d\
+        + u3d) - (-d2 - s1)*(u1*sin(q2) + u3)**2 + ((-d1 -\
+        s3)*(u1*cos(q2)*cos(q3) + u2*sin(q3)) - (-d2 -\
+        s1)*(-u1*sin(q3)*cos(q2) + u2*cos(q3)))*(-u1*sin(q3)*cos(q2) +\
+        u2*cos(q3)) + vn3)*sin(q2)*cos(q3) + (xt*(u1*sin(q2) + u3)*u2 +\
+        xt*(-u1*u2*sin(q2) + u2*u3 + cos(q2)*u1d) + (rr + zt)*(u1*sin(q2)\
+        + u3)*u1*cos(q2) - (rr + zt)*(-u1*u3*cos(q2) + u2d))*cos(q2) +\
+        ((-d1 - s3)*(u1*sin(q2) + u3)*(-u1*sin(q3)*cos(q2) + u2*cos(q3))\
+        + (-d1 - s3)*(-u1*u2*sin(q2)*cos(q3) - u1*u3*sin(q3)*cos(q2) +\
+        u2*u3*cos(q3) + sin(q3)*u2d + cos(q2)*cos(q3)*u1d) + (-d2 -\
+        s1)*(u1*sin(q2) + u3)*(u1*cos(q2)*cos(q3) + u2*sin(q3)) - (-d2 -\
+        s1)*(u1*u2*sin(q2)*sin(q3) - u1*u3*cos(q2)*cos(q3) -\
+        u2*u3*sin(q3) - sin(q3)*cos(q2)*u1d + cos(q3)*u2d) + vn2)*cos(q2)
+
+    return frameAccLong, frameAccLat
 
 def rear_wheel_contact_rate(rearRadius, rearWheelRate, yawAngle):
     """Returns the longitudinal and lateral components of the velocity of the
