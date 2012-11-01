@@ -108,6 +108,8 @@ class DataSet(object):
                               'LatFrontConForce_Nonslip'
                               'FrameAccLong'
                               'FrameAccLat'
+                              'LatRearConAcc'
+                              'LatFrontConAcc'
                               'RollAngle',
                               'RollRate',
                               'RollAcc'

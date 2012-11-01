@@ -31,6 +31,7 @@ import dtk.bicycle as bi
 
 import bicycleparameters as bp
 from bicycleparameters import com as com
+#or from dtk.inertia import total_com
 
 # local dependencies
 from database import get_row_num, get_cell, pad_with_zeros, run_id_string
@@ -611,6 +612,7 @@ class Run():
 
         if self.metadata['Rider'] != 'None':
             self.load_rider(pathToParameterData)
+            self.calculated_parameters()
 
         self.bumpLength = 1.0 # 1 meter
 
@@ -742,7 +744,7 @@ class Run():
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_steer_yaw_angle()
         self.compute_contact_force_nonslip()
-
+        self.compute_contact_points_acceleration()
         self.topSig = 'task'
 
     def compute_signals(self):
@@ -921,25 +923,9 @@ class Run():
 
         bp = self.bicycleRiderParameters
 
-        f0 = np.vectorize(bi.contact_force_rear_longitudinal_N1_nonslip)
-        Fx_r_n = f0(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
-
-        f1 = np.vectorize(bi.contact_force_rear_lateral_N2_nonslip)
-        Fy_r_n = f1(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
-
-        f2 = np.vectorize(bi.contact_force_front_longitudinal_N1_nonslip)
-        Fx_f_n = f2(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
-
-        f3 = np.vectorize(bi.contact_force_front_lateral_N2_nonslip)
-        Fy_f_n = f3(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
-
-        yawAngle = self.taskSignals['YawAngle']
-        frontWheelYawAngle = self.taskSignals['FrontWheelYawAngle']
-
-        Fx_r_ns = cos(yawAngle) * Fx_r_n + sin(yawAngle) * Fy_r_n
-        Fy_r_ns = -sin(yawAngle) * Fx_r_n + cos(yawAngle) * Fy_r_n 
-        Fx_f_ns = cos(frontWheelYawAngle) * Fx_f_n + sin(frontWheelYawAngle) * Fy_f_n
-        Fy_f_ns = -sin(frontWheelYawAngle) * Fx_f_n + cos(frontWheelYawAngle) * Fy_f_n
+        f = np.vectorize(bi.contact_force_nonslip)
+        Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns =\
+            f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
         Fx_r_ns.name = 'LongRearConForce_Nonslip'
         Fx_r_ns.units = 'newton'
@@ -963,17 +949,12 @@ class Run():
         """
         bp = self.bicycleRiderParameters
         mp = self.bicycleRiderMooreParameters
+        cp = self.bicycleRiderCalculatedParameters
 
-        coordinates = np.array([[0, bp['xB'], bp['xH'], bp['w']], [-bp['rR'], 
-                    bp['zB'], bp['zH'], -bp['rF']]])
-        masses = np.array([[bp['mR'], bp['mB'], bp['mH'], bp['mF']]])
-        mT, cT = com.total_com(coordinates, masses)
-        xt = cT[0]; zt = cT[1]
+        xt = cp['xT']; zt = cp['zT']
 
-        ds1 = self.bicycle.parameters['Measured']['ds1']
-        ds3 = self.bicycle.parameters['Measured']['ds3']
-        s3 = ds3
-        s1 = ds1 + mp['l4']
+        s3 = cp['xSAF2VN']
+        s1 = cp['zSAF2VN']
 
         f = np.vectorize(sigpro.frame_masscenter_acceleration)
         frameAccLong, frameAccLat = f(bp['lam'], xt, zt, s1, s3, 
@@ -986,6 +967,28 @@ class Run():
         frameAccLat.name = 'FrameAccLat'
         frameAccLat.units = 'meter/second/second'
         self.computedSignals[frameAccLat.name] = frameAccLat
+
+    def compute_contact_points_acceleration(self):
+        """Calculates the lateral acceleration of the contact points of 
+        front and rear wheels, expressed by body-fixed coordinates."""
+
+        bp = self.bicycleRiderParameters
+        cp = self.bicycleRiderCalculatedParameters
+
+        xt = cp['xT']; zt = cp['zT']
+
+        f = np.vectorize(bi.contact_points_acceleration)
+
+        u8d, u10d = f(bp['lam'], xt, zt, 
+                        self.bicycleRiderMooreParameters, self.taskSignals)
+
+        u8d.name = 'LatRearConAcc'
+        u8d.units = 'meter/second/second'
+        u10d.name = 'LatFrontConAcc'
+        u10d.units = 'meter/second/second'
+
+        self.taskSignals[u8d.name] = u8d
+        self.taskSignals[u10d.name] = u10d
 
     def compute_rear_wheel_contact_points(self):
         """Computes the location of the wheel contact points in the ground
@@ -1400,6 +1403,32 @@ class Run():
 
         self.bicycleRiderMooreParameters =\
             bi.benchmark_to_moore(self.bicycleRiderParameters)
+
+    def calculated_parameters(self):
+        """Calculate auxiliary calculated parameters."""
+
+        bp = self.bicycleRiderParameters
+        mp = self.bicycleRiderMooreParameters
+
+        cp = {}
+
+        #1, total mass center
+        coordinates = np.array([[0, bp['xB'], bp['xH'], bp['w']], [-bp['rR'], 
+                    bp['zB'], bp['zH'], -bp['rF']]])
+        masses = np.array([[bp['mR'], bp['mB'], bp['mH'], bp['mF']]])
+        mT, cT = com.total_com(coordinates, masses)
+
+        cp['mT'] = mT ; cp['xT'] = cT[0]; cp['zT'] = cT[1]
+
+        #2, VN-100 position relative to steer axis foot in C frame-fixed coordinates
+        ds1 = self.bicycle.parameters['Measured']['ds1']
+        ds3 = self.bicycle.parameters['Measured']['ds3']
+        s3 = ds3 #forward perpendicular to steer axis
+        s1 = ds1 + mp['l4'] #downward along the steer axis
+
+        cp['xSAF2VN'] = s3; cp['zSAF2VN'] = s1
+
+        self.bicycleRiderCalculatedParameters = cp
 
     def plot(self, *args, **kwargs):
         '''
