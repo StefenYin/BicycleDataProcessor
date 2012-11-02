@@ -925,24 +925,24 @@ class Run():
         bp = self.bicycleRiderParameters
 
         f = np.vectorize(con.contact_force_constraints)
-        Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns =\
+        Fx_r_c, Fy_r_c, Fx_f_c, Fy_f_c =\
             f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
-        Fx_r_ns.name = 'LongRearConForce_Nonslip'
-        Fx_r_ns.units = 'newton'
-        self.taskSignals[Fx_r_ns.name] = Fx_r_ns
+        Fx_r_c.name = 'LongRearConForce_Constraints'
+        Fx_r_c.units = 'newton'
+        self.taskSignals[Fx_r_c.name] = Fx_r_c
 
-        Fy_r_ns.name = 'LatRearConForce_Nonslip'
-        Fy_r_ns.units = 'newton'
-        self.taskSignals[Fy_r_ns.name] = Fy_r_ns
+        Fy_r_c.name = 'LatRearConForce_Constraints'
+        Fy_r_c.units = 'newton'
+        self.taskSignals[Fy_r_c.name] = Fy_r_c
 
-        Fx_f_ns.name = 'LongFrontConForce_Nonslip'
-        Fx_f_ns.units = 'newton'
-        self.taskSignals[Fx_f_ns.name] = Fx_f_ns
+        Fx_f_c.name = 'LongFrontConForce_Constraints'
+        Fx_f_c.units = 'newton'
+        self.taskSignals[Fx_f_c.name] = Fx_f_c
 
-        Fy_f_ns.name = 'LatFrontConForce_Nonslip'
-        Fy_f_ns.units = 'newton'
-        self.taskSignals[Fy_f_ns.name] = Fy_f_ns
+        Fy_f_c.name = 'LatFrontConForce_Constraints'
+        Fy_f_c.units = 'newton'
+        self.taskSignals[Fy_f_c.name] = Fy_f_c
 
     def compute_frame_masscenter_acceleration(self):
         """Calculate the accelerations of total mass center of the bicycle, 
