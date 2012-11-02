@@ -28,6 +28,7 @@ from tables import NoSuchNodeError
 
 import dtk.process as process
 import dtk.bicycle as bi
+import dtk.contactforce_constraints as con
 
 import bicycleparameters as bp
 from bicycleparameters import com as com
@@ -743,7 +744,7 @@ class Run():
         self.compute_rear_wheel_contact_points()
         self.compute_front_wheel_contact_points()
         self.compute_front_wheel_steer_yaw_angle()
-        self.compute_contact_force_nonslip()
+        self.compute_contact_force_constraints()
         self.compute_contact_points_acceleration()
         self.topSig = 'task'
 
@@ -917,13 +918,13 @@ class Run():
             frontWheelAcc.name = 'FrontWheelAcc'
             self.computedSignals[frontWheelAcc.name] = frontWheelAcc
 
-    def compute_contact_force_nonslip(self):
+    def compute_contact_force_constraints(self):
         """Calculate the contact force of each wheel under the constraint 
         condition. Here, the forces are expressed by body-fixed coordinates."""
 
         bp = self.bicycleRiderParameters
 
-        f = np.vectorize(bi.contact_force_nonslip)
+        f = np.vectorize(con.contact_force_nonslip)
         Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns =\
             f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
