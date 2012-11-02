@@ -980,15 +980,21 @@ class Run():
 
         f = np.vectorize(bi.contact_points_acceleration)
 
-        u8d, u10d = f(bp['lam'], xt, zt, 
+        u7d, u8d, u9d, u10d = f(bp['lam'], xt, zt, 
                         self.bicycleRiderMooreParameters, self.taskSignals)
 
+        u7d.name = 'LongRearConAcc'
+        u7d.units = 'meter/second/second'
         u8d.name = 'LatRearConAcc'
         u8d.units = 'meter/second/second'
+        u9d.name = 'LongFrontConAcc'
+        u9d.units = 'meter/second/second'
         u10d.name = 'LatFrontConAcc'
         u10d.units = 'meter/second/second'
 
+        self.taskSignals[u7d.name] = u7d
         self.taskSignals[u8d.name] = u8d
+        self.taskSignals[u9d.name] = u9d
         self.taskSignals[u10d.name] = u10d
 
     def compute_rear_wheel_contact_points(self):
