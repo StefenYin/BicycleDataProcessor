@@ -924,7 +924,7 @@ class Run():
 
         bp = self.bicycleRiderParameters
 
-        f = np.vectorize(con.contact_force_nonslip)
+        f = np.vectorize(con.contact_force_constraints)
         Fx_r_ns, Fy_r_ns, Fx_f_ns, Fy_f_ns =\
             f(bp['lam'], self.bicycleRiderMooreParameters, self.taskSignals)
 
